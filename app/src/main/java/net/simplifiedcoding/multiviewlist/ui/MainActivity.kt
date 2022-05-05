@@ -1,0 +1,47 @@
+package net.simplifiedcoding.multiviewlist.ui
+
+import android.content.res.Configuration
+import android.os.Bundle
+import android.widget.Toast
+import androidx.activity.viewModels
+import androidx.appcompat.app.AppCompatActivity
+import androidx.recyclerview.widget.LinearLayoutManager
+import dagger.hilt.android.AndroidEntryPoint
+import net.simplifiedcoding.multiviewlist.data.network.Resource
+import net.vishtech.multiviewlist.databinding.ActivityMainBinding
+
+@AndroidEntryPoint
+class MainActivity : AppCompatActivity() {
+
+    private lateinit var binding: ActivityMainBinding
+    private val viewModel by viewModels<HomeViewModel>()
+    private val homeRecyclerViewAdapter = HomeRecyclerViewAdapter()
+
+    override fun onCreate(savedInstanceState: Bundle?) {
+        super.onCreate(savedInstanceState)
+        binding = ActivityMainBinding.inflate(layoutInflater)
+        setContentView(binding.root)
+
+        binding.recyclerView.apply {
+            setHasFixedSize(true)
+            layoutManager = LinearLayoutManager(this@MainActivity)
+            adapter = homeRecyclerViewAdapter
+        }
+
+        viewModel.homeListItemsLiveData.observe(this) { result ->
+            when(result) {
+                is Resource.Failure -> {
+                    binding.progressBar.hide()
+                    Toast.makeText(this, "Error: Failed to load list", Toast.LENGTH_SHORT).show()
+                }
+                Resource.Loading -> {
+                    binding.progressBar.show()
+                }
+                is Resource.Success -> {
+                    binding.progressBar.hide()
+                    homeRecyclerViewAdapter.items = result.value
+                }
+            }
+        }
+    }
+}
